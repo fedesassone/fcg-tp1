@@ -26,26 +26,58 @@ function getClosestColor(color, factor)
 
 function dither(image, factor)
 {
-	var rowSize = image.height;
-	var columnSize = image.width;
+	var rowSize = image.height * 4;
+	var columnSize = image.width * 4;
 
-	for (var row = 0; row + 4 < rowSize; row=row + 4) {
-		for (var column = 0; column + 4 < columnSize; column = column + 4) {
+	for (var row = 0; row + 4 < rowSize; row=row + 1) {
+		for (var column = 0; column + 4 < columnSize; column = column + 1) {
+
 			var index = row * columnSize + column;
+
 			var rComponent = image.data[index];
+			var gComponent = image.data[index + 1];
+			var bComponent = image.data[index + 2];
     
+			var rClosestColor = getClosestColor(rComponent, factor);
+			var gClosestColor = getClosestColor(gComponent, factor);
+			var bClosestColor = getClosestColor(bComponent, factor);
 
-			var closestColor = getClosestColor(rComponent, factor);
+         	var rError = rComponent - rClosestColor;
+         	var gError = gComponent - gClosestColor;
+         	var bError = bComponent - bClosestColor;
 
-         	var error = Math.abs(closestColor - rComponent);
+			// saving real colors
+         	image.data[index]     = rClosestColor;                  
+         	image.data[index + 1] = gClosestColor;
+			image.data[index + 2] = bClosestColor;
 
-         	image.data[index] = rComponent;                  // saving real color
+			// right neighbour
+         	if(column+4 < columnSize){ 	
+         		image.data[index    ] += (rError*7)>>4;
+	         	image.data[index + 1] += (gError*7)>>4;
+				image.data[index + 2] += (bError*7)>>4;
+         	} 
 
-         	if(column+4<columnSize) image.data[index+4] += (error*7)>>4;  // if right neighbour exists
-         	if(row+4==rowSize) continue;   // if we are in the last line
-         	if(column  >0) image.data[index+columnSize-4] += (error*3)>>4;  // bottom left neighbour
-                      image.data[index+columnSize  ] += (error*5)>>4;  // bottom neighbour
-         	if(column+4<columnSize) image.data[index+columnSize+4] += (error*1)>>4;  // bottom right neighbour
+         	if(row+4==rowSize) continue;
+
+         	// bottom left neighbour
+         	if(column > 0){
+         		image.data[index + columnSize - 4] += (rError*3)>>4;
+         		image.data[index + columnSize - 3] += (gError*3)>>4;
+         		image.data[index + columnSize - 2] += (bError*3)>>4;
+         	} 
+
+			// bottom neighbour
+            image.data[index+columnSize    ] += (rError*5)>>4;
+            image.data[index+columnSize + 1] += (gError*5)>>4;
+            image.data[index+columnSize + 2] += (bError*5)>>4;
+
+			// bottom right neighbour
+         	if(column+4 < columnSize){
+         	 	image.data[index+columnSize+4    ] += (rError*1)>>4;
+         	 	image.data[index+columnSize+4 + 1] += (gError*1)>>4;
+         	 	image.data[index+columnSize+4 + 2] += (bError*1)>>4;
+         	}
 		}
 	}
 
@@ -60,26 +92,12 @@ function dither(image, factor)
  //        pixel[x - 1][y + 1] := pixel[x - 1][y + 1] + quant_error × 3 / 16
  //        pixel[x    ][y + 1] := pixel[x    ][y + 1] + quant_error × 5 / 16
  //        pixel[x + 1][y + 1] := pixel[x + 1][y + 1] + quant_error × 1 / 16
-
-	
-	// cosas operando en varias componentes
-
-	// 	// rComponent = imageA.data[i * 4]     - imageA.data[i * 4];
-	// 	// gComponent = imageA.data[i * 4 + 1] - imageA.data[i * 4 + 1];
-	// 	// bComponent = imageA.data[i * 4 + 2] - imageA.data[i * 4 + 2];
-	// 	// aComponent = imageA.data[i * 4 + 3] - imageA.data[i * 4 + 3];
-
-	// 	image.data[i * 4]     = image.data[i * 4] + 50;
-	// 	// image[i * 4 + 1] = gComponent;
-	// 	// image[i * 4 + 2] = bComponent;
-	// 	// copyImageData[i * 4 + 3] = aComponent;
-	// }
 }
 
 // Imágenes a restar (imageA y imageB) y el retorno en result
 function substraction(imageA,imageB,result) 
 {
-	// testear bien esto
+	// testear bien esto - parece que anda?
 	var pixelSize = imageA.data.length;
 
 	for (var i = pixelSize - 1; i >= 0; i--) {
@@ -93,5 +111,5 @@ function substraction(imageA,imageB,result)
 		result.data[i * 4 + 1] = gComponent;
 		result.data[i * 4 + 2] = bComponent;
 		result.data[i * 4 + 3] = 255;
-	}s
+	}
 }
