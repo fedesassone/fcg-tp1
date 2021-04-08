@@ -53,9 +53,9 @@ function dither(image, factor)
 
 			// right neighbour
          	if(column+4 < columnSize){ 	
-         		image.data[index    ] += (rError*7)>>4;
-	         	image.data[index + 1] += (gError*7)>>4;
-				image.data[index + 2] += (bError*7)>>4;
+         		image.data[index + 4] += (rError*7)>>4;
+	         	image.data[index + 5] += (gError*7)>>4;
+				image.data[index + 6] += (bError*7)>>4;
          	} 
 
          	if(row+4==rowSize) continue;
@@ -74,24 +74,12 @@ function dither(image, factor)
 
 			// bottom right neighbour
          	if(column+4 < columnSize){
-         	 	image.data[index+columnSize+4    ] += (rError*1)>>4;
-         	 	image.data[index+columnSize+4 + 1] += (gError*1)>>4;
-         	 	image.data[index+columnSize+4 + 2] += (bError*1)>>4;
+         	 	image.data[index+columnSize+4] += (rError*1)>>4;
+         	 	image.data[index+columnSize+5] += (gError*1)>>4;
+         	 	image.data[index+columnSize+6] += (bError*1)>>4;
          	}
 		}
 	}
-
- // Pseudo-código
- //  for each y from top to bottom do
- //    for each x from left to right do
- //        oldpixel := pixel[x][y]
- //        newpixel := find_closest_palette_color(oldpixel)
- //        pixel[x][y] := newpixel
- //        quant_error := oldpixel - newpixel
- //        pixel[x + 1][y    ] := pixel[x + 1][y    ] + quant_error × 7 / 16
- //        pixel[x - 1][y + 1] := pixel[x - 1][y + 1] + quant_error × 3 / 16
- //        pixel[x    ][y + 1] := pixel[x    ][y + 1] + quant_error × 5 / 16
- //        pixel[x + 1][y + 1] := pixel[x + 1][y + 1] + quant_error × 1 / 16
 }
 
 // Imágenes a restar (imageA y imageB) y el retorno en result
@@ -105,11 +93,9 @@ function substraction(imageA,imageB,result)
 		rComponent = imageA.data[i * 4]     - imageB.data[i * 4];
 		gComponent = imageA.data[i * 4 + 1] - imageB.data[i * 4 + 1];
 		bComponent = imageA.data[i * 4 + 2] - imageB.data[i * 4 + 2];
-		aComponent = imageA.data[i * 4 + 3] - imageB.data[i * 4 + 3];
 
 		result.data[i * 4]     = rComponent;
 		result.data[i * 4 + 1] = gComponent;
 		result.data[i * 4 + 2] = bComponent;
-		result.data[i * 4 + 3] = 255;
 	}
 }
