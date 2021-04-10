@@ -23,14 +23,14 @@ function getClosestColor(color, factor)
 	});
 }
 
-
+// funcando bien
 function dither(image, factor)
 {
 	var rowSize = image.height * 4;
 	var columnSize = image.width * 4;
 
-	for (var row = 0; row + 4 < rowSize; row=row + 1) {
-		for (var column = 0; column + 4 < columnSize; column = column + 1) {
+	for (var row = 0; row < rowSize; row++) {
+		for (var column = 0; column < columnSize; column++) {
 
 			var index = row * columnSize + column;
 
@@ -52,13 +52,13 @@ function dither(image, factor)
 			image.data[index + 2] = bClosestColor;
 
 			// right neighbour
-         	if(column+4 < columnSize){ 	
+         	if(column+1 < columnSize){ 	
          		image.data[index + 4] += (rError*7)>>4;
 	         	image.data[index + 5] += (gError*7)>>4;
 				image.data[index + 6] += (bError*7)>>4;
          	} 
 
-         	if(row+4==rowSize) continue;
+         	if(row+1==rowSize) continue;
 
          	// bottom left neighbour
          	if(column > 0){
@@ -73,7 +73,7 @@ function dither(image, factor)
             image.data[index+columnSize + 2] += (bError*5)>>4;
 
 			// bottom right neighbour
-         	if(column+4 < columnSize){
+         	if(column+1 < columnSize){
          	 	image.data[index+columnSize+4] += (rError*1)>>4;
          	 	image.data[index+columnSize+5] += (gError*1)>>4;
          	 	image.data[index+columnSize+6] += (bError*1)>>4;
