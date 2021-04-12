@@ -2,7 +2,6 @@
 // es objeto del tipo ImageData ( más info acá https://mzl.la/3rETTC6  )
 // Factor indica la cantidad de intensidades permitidas (sin contar el 0)
 
-// testeado
 function getIntensities(factor)
 {
 	var offset = Math.round(255/factor);
@@ -14,23 +13,27 @@ function getIntensities(factor)
 	return [...result, 255];
 }
 
-// testeado - quizás haya una forma más inteligente de obtener esto
 function getClosestColor(color, factor)
 {
 	var intensities = getIntensities(factor);
-	return intensities.reduce(function(previous, current) {
-  		return (Math.abs(current - color) < Math.abs(previous - color) ? current : previous);
-	});
+	var closest = intensities[0];
+	var closestDiff = 256;
+	for (var i = 0; i<intensities.length ; i++) {
+		if(Math.abs(intensities[i] - color) < closestDiff){
+			closest = intensities[i];
+			closestDiff = Math.abs(intensities[i] - color);
+		}
+	}
+	return closest;
 }
 
-// funcando bien
 function dither(image, factor)
 {
-	var rowSize = image.height * 4;
+	var rowSize = image.height;
 	var columnSize = image.width * 4;
 
 	for (var row = 0; row < rowSize; row++) {
-		for (var column = 0; column < columnSize; column++) {
+		for (var column = 0; column < columnSize; column+= 4) {
 
 			var index = row * columnSize + column;
 
@@ -58,8 +61,6 @@ function dither(image, factor)
 				image.data[index + 6] += (bError*7)>>4;
          	} 
 
-         	if(row+1==rowSize) continue;
-
          	// bottom left neighbour
          	if(column > 0){
          		image.data[index + columnSize - 4] += (rError*3)>>4;
@@ -85,7 +86,6 @@ function dither(image, factor)
 // Imágenes a restar (imageA y imageB) y el retorno en result
 function substraction(imageA,imageB,result)
 {
-	// testear bien esto - parece que anda?
 	var pixelSize = imageA.data.length;
 
 	for (var i = pixelSize - 1; i >= 0; i--) {
