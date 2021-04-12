@@ -83,7 +83,7 @@ function dither(image, factor)
 }
 
 // Imágenes a restar (imageA y imageB) y el retorno en result
-function substraction(imageA,imageB,result) 
+function substraction(imageA,imageB,result)
 {
 	// testear bien esto - parece que anda?
 	var pixelSize = imageA.data.length;
@@ -94,8 +94,8 @@ function substraction(imageA,imageB,result)
 		gComponent = imageA.data[i * 4 + 1] - imageB.data[i * 4 + 1];
 		bComponent = imageA.data[i * 4 + 2] - imageB.data[i * 4 + 2];
 
-		result.data[i * 4]     = rComponent;
-		result.data[i * 4 + 1] = gComponent;
-		result.data[i * 4 + 2] = bComponent;
+		result.data[i * 4]     = Math.abs(rComponent);
+		result.data[i * 4 + 1] = Math.abs(gComponent);
+		result.data[i * 4 + 2] = Math.abs(bComponent);
 	}
 }
