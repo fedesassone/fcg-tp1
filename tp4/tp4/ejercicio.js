@@ -44,16 +44,18 @@ function GetModelViewProjection( projectionMatrix, translationX, translationY, t
 	// [COMPLETAR] Modificar el código para formar la matriz de transformación.
 
 	// Convertimos de radianes a grados
-	let phi_x = rotationX * (Math.PI/180);
-	let phi_y = rotationY * (Math.PI/180);
+	let x = rotationX * (Math.PI/180);
+	let y = rotationY * (Math.PI/180);
 
 	// Matriz de traslación + rotacion
 	var trans = [
-		 Math.cos(phi_y), 0              ,  Math.sin(phi_y)                , 0,
-		 0              , Math.cos(phi_x), -Math.sin(phi_x)                , 0,
-		-Math.sin(phi_y), Math.sin(phi_x),  Math.cos(phi_x)*Math.cos(phi_y), 0,
-		translationX    ,  translationY  , translationZ                    , 1
+		 Math.cos(y)            , 0           ,  Math.sin(y)            , 0,
+		 Math.sin(x)*Math.sin(y), Math.cos(x) , -Math.sin(x)*Math.cos(y), 0,
+		-Math.cos(x)*Math.sin(y), Math.sin(x) ,  Math.cos(x)*Math.cos(y), 0,
+		 translationX           , translationY,  translationZ           , 1
 	];
+
+
 
 	var mvp = MatrixMult( projectionMatrix, trans );
 	return mvp;
@@ -68,12 +70,19 @@ class MeshDrawer
 		// [COMPLETAR] inicializaciones
 
 		// 1. Compilamos el programa de shaders
+		//this.prog = InitShaderProgram( vertexShader, fragmentShader );
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
+		//this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
 
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
+		//this.vertT = gl.getAttribLocation( this.prog, 't' );
 
 		// 4. Obtenemos los IDs de los atributos de los vértices en los shaders
+		//this.buffer = gl.createBuffer();
+
+		//gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		//gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tv), gl.STATIC_DRAW);
 
 		// ...
 	}
