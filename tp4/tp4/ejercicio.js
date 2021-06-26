@@ -55,8 +55,6 @@ function GetModelViewProjection( projectionMatrix, translationX, translationY, t
 		 translationX           , translationY,  translationZ           , 1
 	];
 
-
-
 	var mvp = MatrixMult( projectionMatrix, trans );
 	return mvp;
 }
@@ -70,19 +68,22 @@ class MeshDrawer
 		// [COMPLETAR] inicializaciones
 
 		// 1. Compilamos el programa de shaders
-		//this.prog = InitShaderProgram( vertexShader, fragmentShader );
+		this.prog  = InitShaderProgram( meshVS, meshFS );
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
-		//this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+		this.pos = gl.getUniformLocation( this.prog, 'pos' );
+		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+		this.numTriangles = 0;
+		
+		this.buffer = gl.createBuffer();
+
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+
+		// gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
 
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
-		//this.vertT = gl.getAttribLocation( this.prog, 't' );
 
 		// 4. Obtenemos los IDs de los atributos de los vértices en los shaders
-		//this.buffer = gl.createBuffer();
-
-		//gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-		//gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(tv), gl.STATIC_DRAW);
 
 		// ...
 	}
@@ -97,6 +98,7 @@ class MeshDrawer
 	{
 		// [COMPLETAR] Actualizar el contenido del buffer de vértices
 		this.numTriangles = vertPos.length / 3;
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertPos), gl.STATIC_DRAW);
 	}
 	
 	// Esta función se llama cada vez que el usuario cambia el estado del checkbox 'Intercambiar Y-Z'
@@ -113,6 +115,14 @@ class MeshDrawer
 		// [COMPLETAR] Completar con lo necesario para dibujar la colección de triángulos en WebGL
 		
 		// 1. Seleccionamos el shader
+		gl.useProgram( this.prog );
+
+		gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer );
+
+
+		gl.vertexAttribPointer( this.pos, 1, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( this.pos );
+
 	
 		// 2. Setear matriz de transformacion
 		
@@ -120,7 +130,7 @@ class MeshDrawer
 		
 		// ...
 		// Dibujamos
-		// gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles * 3 );
+		gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles * 3 );
 	}
 	
 	// Esta función se llama para setear una textura sobre la malla
