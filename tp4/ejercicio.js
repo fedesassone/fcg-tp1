@@ -44,14 +44,14 @@ function GetModelViewProjection( projectionMatrix, translationX, translationY, t
 	// [COMPLETAR] Modificar el código para formar la matriz de transformación.
 
 	// Convertimos de radianes a grados
-	let x = rotationX * (Math.PI/180);
-	let y = rotationY * (Math.PI/180);
+	let x = rotationX // * (Math.PI/180);
+	let y = rotationY // * (Math.PI/180);
 
 	// Matriz de traslación + rotacion
 	var trans = [
-		 Math.cos(y)            , 0           ,  Math.sin(y)            , 0,
-		 Math.sin(x)*Math.sin(y), Math.cos(x) , -Math.sin(x)*Math.cos(y), 0,
-		-Math.cos(x)*Math.sin(y), Math.sin(x) ,  Math.cos(x)*Math.cos(y), 0,
+		 Math.cos(y)            , 0           ,  -Math.sin(y)            , 0,
+		 Math.sin(x)*Math.sin(y), Math.cos(x) , Math.sin(x)*Math.cos(y), 0,
+		 Math.cos(x)*Math.sin(y), -Math.sin(x) ,  Math.cos(x)*Math.cos(y), 0,
 		 translationX           , translationY,  translationZ           , 1
 	];
 
@@ -71,15 +71,16 @@ class MeshDrawer
 		this.prog  = InitShaderProgram( meshVS, meshFS );
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
-		this.pos = gl.getUniformLocation( this.prog, 'pos' );
+		this.pos = gl.getAttribLocation( this.prog, 'pos' );
+		
 		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+		
 		this.numTriangles = 0;
 		
 		this.buffer = gl.createBuffer();
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 
-		// gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
+		//gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
 
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 
@@ -97,7 +98,11 @@ class MeshDrawer
 	setMesh( vertPos, texCoords )
 	{
 		// [COMPLETAR] Actualizar el contenido del buffer de vértices
+		
 		this.numTriangles = vertPos.length / 3;
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertPos), gl.STATIC_DRAW);
 	}
 	
@@ -120,11 +125,13 @@ class MeshDrawer
 		gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer );
 
 
-		gl.vertexAttribPointer( this.pos, 1, gl.FLOAT, false, 0, 0 );
+		gl.vertexAttribPointer( this.pos, 3, gl.FLOAT, false, 0, 0 );
 		gl.enableVertexAttribArray( this.pos );
 
 	
 		// 2. Setear matriz de transformacion
+
+		gl.uniformMatrix4fv( this.mvp, false, trans );
 		
 	    // 3.Binding de los buffers
 		
