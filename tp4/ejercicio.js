@@ -49,10 +49,10 @@ function GetModelViewProjection( projectionMatrix, translationX, translationY, t
 
 	// Matriz de traslación + rotacion
 	var trans = [
-		 Math.cos(y)            , 0           ,  -Math.sin(y)            , 0,
+		 Math.cos(y)            , 0           , -Math.sin(y)           , 0,
 		 Math.sin(x)*Math.sin(y), Math.cos(x) , Math.sin(x)*Math.cos(y), 0,
-		 Math.cos(x)*Math.sin(y), -Math.sin(x) ,  Math.cos(x)*Math.cos(y), 0,
-		 translationX           , translationY,  translationZ           , 1
+		 Math.cos(x)*Math.sin(y), -Math.sin(x), Math.cos(x)*Math.cos(y), 0,
+		 translationX           , translationY, translationZ           , 1
 	];
 
 	var mvp = MatrixMult( projectionMatrix, trans );
@@ -79,9 +79,6 @@ class MeshDrawer
 		
 		this.buffer = gl.createBuffer();
 
-
-		//gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
-
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 
 		// 4. Obtenemos los IDs de los atributos de los vértices en los shaders
@@ -99,7 +96,7 @@ class MeshDrawer
 	{
 		// [COMPLETAR] Actualizar el contenido del buffer de vértices
 		
-		this.numTriangles = vertPos.length / 3;
+		this.numTriangles = vertPos.length / 3 / 3;
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 		
@@ -111,6 +108,12 @@ class MeshDrawer
 	swapYZ( swap )
 	{
 		// [COMPLETAR] Setear variables uniformes en el vertex shader
+		// if(swap){
+			// intercambiamos los x e y en la matriz de posiciones
+			// traemos la posicion
+			// var p = gl.getAttribLocation(prog, 'pos');
+			// gl.bindBuffer(gl.ARRAY_BUFFER, position_buffer);
+		// }
 	}
 	
 	// Esta función se llama para dibujar la malla de triángulos
@@ -137,6 +140,7 @@ class MeshDrawer
 		
 		// ...
 		// Dibujamos
+		gl.clear( gl.COLOR_BUFFER_BIT );
 		gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles * 3 );
 	}
 	
@@ -172,6 +176,6 @@ var meshFS = `
 	precision mediump float;
 	void main()
 	{		
-		gl_FragColor = vec4( 1, 0, 0, 1 );
+		gl_FragColor = vec4(1,0,gl_FragCoord.z*gl_FragCoord.z,1);
 	}
 `;
