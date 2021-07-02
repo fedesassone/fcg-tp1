@@ -74,6 +74,8 @@ class MeshDrawer
 		this.pos = gl.getAttribLocation( this.prog, 'pos' );
 		
 		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+
+		this.swapVar = gl.getUniformLocation( this.prog, 'swapVar' );
 		
 		this.numTriangles = 0;
 		
@@ -108,12 +110,8 @@ class MeshDrawer
 	swapYZ( swap )
 	{
 		// [COMPLETAR] Setear variables uniformes en el vertex shader
-		// if(swap){
-			// intercambiamos los x e y en la matriz de posiciones
-			// traemos la posicion
-			// var p = gl.getAttribLocation(prog, 'pos');
-			// gl.bindBuffer(gl.ARRAY_BUFFER, position_buffer);
-		// }
+		gl.useProgram( this.prog );
+		gl.uniform1i(this.swapVar, swap);
 	}
 	
 	// Esta función se llama para dibujar la malla de triángulos
@@ -165,9 +163,18 @@ class MeshDrawer
 var meshVS = `
 	attribute vec3 pos;
 	uniform mat4 mvp;
+	uniform bool swapVar;
 	void main()
 	{ 
-		gl_Position = mvp * vec4(pos,1);
+		if(swapVar){
+			vec3 swapPos;
+			swapPos[0] = pos[1];
+			swapPos[1] = pos[0];
+			swapPos[2] = pos[2];
+			gl_Position = mvp * vec4(swapPos,1);
+		} else{
+			gl_Position = mvp * vec4(pos,1);
+		}
 	}
 `;
 
