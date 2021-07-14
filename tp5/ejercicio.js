@@ -64,14 +64,23 @@
 function GetModelViewMatrix( translationX, translationY, translationZ, rotationX, rotationY )
 {
 	// [COMPLETAR] Modificar el código para formar la matriz de transformación.
+	let x = rotationX;
+	let y = rotationY;
 
 	// Matriz de traslación
 	var trans = [
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		translationX, translationY, translationZ, 1
-	];
+		Math.cos(y)            , 0           , -Math.sin(y)           , 0,
+		Math.sin(x)*Math.sin(y), Math.cos(x) , Math.sin(x)*Math.cos(y), 0,
+		Math.cos(x)*Math.sin(y), -Math.sin(x), Math.cos(x)*Math.cos(y), 0,
+		translationX           , translationY, translationZ           , 1
+   ];
+
+	// var trans = [
+	// 	1, 0, 0, 0,
+	// 	0, 1, 0, 0,
+	// 	0, 0, 1, 0,
+	// 	translationX, translationY, translationZ, 1
+	// ];
 
 	var mv = trans;
 	return mv;
@@ -86,12 +95,22 @@ class MeshDrawer
 		// [COMPLETAR] inicializaciones
 
 		// 1. Compilamos el programa de shaders
+		this.prog  = InitShaderProgram( meshVS, meshFS );
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
-
+		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+		
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
+		this.pos = gl.getAttribLocation( this.prog, 'pos' );
+
+		this.texCoord = gl.getAttribLocation( this.prog, 'texCoord' );
 
 		// 4. Creamos los buffers
+		this.numTriangles = 0;
+
+		this.buffer = gl.createBuffer();
+
+		this.textureCoordBuffer = gl.createBuffer();
 
 		// ...
 	}
@@ -112,8 +131,12 @@ class MeshDrawer
 		this.numTriangles = vertPos.length / 3 / 3;
 
 		// 1. Binding y seteo del buffer de vértices
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertPos), gl.STATIC_DRAW);
 
 		// 2. Binding y seteo del buffer de coordenadas de textura	
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
 
 		// 3. Binding y seteo del buffer de normales	
 	}
@@ -123,6 +146,8 @@ class MeshDrawer
 	swapYZ( swap )
 	{
 		// [COMPLETAR] Setear variables uniformes en el vertex shader
+		gl.useProgram( this.prog );
+		gl.uniform1i(this.swapVar, swap);
 	}
 	
 	// Esta función se llama para dibujar la malla de triángulos
@@ -135,8 +160,12 @@ class MeshDrawer
 		// [COMPLETAR] Completar con lo necesario para dibujar la colección de triángulos en WebGL
 		
 		// 1. Seleccionamos el shader
+		gl.useProgram( this.prog );
 	
 		// 2. Setear uniformes con las matrices de transformaciones
+		
+		// aca toquetear matrixMVP, matrixMV, matrixNormal y setear la correcta 
+		// gl.uniformMatrix4fv( matrixMVP, false, trans );
 
    		// 3. Habilitar atributos: vértices, normales, texturas
 
@@ -193,6 +222,7 @@ var meshVS = `
 
 	uniform mat4 mvp;
 	uniform mat4 mv;
+	uniform bool swapVar;
 
 	varying vec2 texCoord;
 	varying vec3 normCoord;
@@ -201,6 +231,16 @@ var meshVS = `
 	void main()
 	{ 
 		gl_Position = mvp * vec4(pos,1);
+
+		if(swapVar){
+			vec3 swapPos;
+			swapPos[0] = pos[1];
+			swapPos[1] = pos[0];
+			swapPos[2] = pos[2];
+			gl_Position = mvp * vec4(swapPos,1);
+		} else{
+			gl_Position = mvp * vec4(pos,1);
+		}
 	}
 `;
 
