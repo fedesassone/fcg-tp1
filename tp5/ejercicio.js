@@ -61,6 +61,7 @@
 // 3D (rotación, traslación y proyección) en una matriz de 4x4, 
 // representada por un arreglo en formato column-major. 
 
+// de aca sale la matriz mv
 function GetModelViewMatrix( translationX, translationY, translationZ, rotationX, rotationY )
 {
 	// [COMPLETAR] Modificar el código para formar la matriz de transformación.
@@ -68,22 +69,12 @@ function GetModelViewMatrix( translationX, translationY, translationZ, rotationX
 	let y = rotationY;
 
 	// Matriz de traslación
-	var trans = [
+	return [
 		Math.cos(y)            , 0           , -Math.sin(y)           , 0,
 		Math.sin(x)*Math.sin(y), Math.cos(x) , Math.sin(x)*Math.cos(y), 0,
 		Math.cos(x)*Math.sin(y), -Math.sin(x), Math.cos(x)*Math.cos(y), 0,
 		translationX           , translationY, translationZ           , 1
    ];
-
-	// var trans = [
-	// 	1, 0, 0, 0,
-	// 	0, 1, 0, 0,
-	// 	0, 0, 1, 0,
-	// 	translationX, translationY, translationZ, 1
-	// ];
-
-	var mv = trans;
-	return mv;
 }
 
 // [COMPLETAR] Completar la implementación de esta clase.
@@ -98,19 +89,27 @@ class MeshDrawer
 		this.prog  = InitShaderProgram( meshVS, meshFS );
 		
 		// 2. Obtenemos los IDs de las variables uniformes en los shaders
-		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+		this.mvp     = gl.getUniformLocation( this.prog, 'mvp' );
+		this.mv      = gl.getUniformLocation( this.prog, 'mv' );
+		this.mn      = gl.getUniformLocation( this.prog, 'mn' );
+		this.swapVar = gl.getUniformLocation( this.prog, 'swapVar' );
+		this.swapTex = gl.getUniformLocation( this.prog, 'swapTex' );
+		// hack para que matchee con el estado inicial del front
+		this.showTexture(true);
 		
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 		this.pos = gl.getAttribLocation( this.prog, 'pos' );
 
-		this.texCoord = gl.getAttribLocation( this.prog, 'texCoord' );
+		this.texCoordsVS = gl.getAttribLocation( this.prog, 'texCoordsVS'  );
+		this.normCoord   = gl.getAttribLocation( this.prog, 'normCoord' );
+		this.vertCoord   = gl.getAttribLocation( this.prog, 'vertCoord' );
 
-		// 4. Creamos los buffers
 		this.numTriangles = 0;
 
-		this.buffer = gl.createBuffer();
-
-		this.textureCoordBuffer = gl.createBuffer();
+		// 4. Creamos los buffers
+		this.vertPosBuffer   = gl.createBuffer();
+		this.texCoordsBuffer = gl.createBuffer();
+		this.normalsBuffer   = gl.createBuffer();
 
 		// ...
 	}
@@ -131,14 +130,16 @@ class MeshDrawer
 		this.numTriangles = vertPos.length / 3 / 3;
 
 		// 1. Binding y seteo del buffer de vértices
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertPosBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertPos), gl.STATIC_DRAW);
 
 		// 2. Binding y seteo del buffer de coordenadas de textura	
-		gl.bindBuffer(gl.ARRAY_BUFFER, this.textureCoordBuffer);
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.texCoordsBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
 
 		// 3. Binding y seteo del buffer de normales	
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.normalsBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
 	}
 	
 	// Esta función se llama cada vez que el usuario cambia el estado del checkbox 'Intercambiar Y-Z'
@@ -155,6 +156,10 @@ class MeshDrawer
 	// la matriz model-view (matrixMV) que es retornada por 
 	// GetModelViewProjection y la matriz de transformación de las 
 	// normales (matrixNormal) que es la inversa transpuesta de matrixMV
+
+	// 4x4 la mvp es la de proyeccion
+	// 4x4 mv es la de la funcion de mas arriba
+	// 3x3 matrixNormal = [ mv[0],mv[1],mv[2], mv[4],mv[5],mv[6], mv[8],mv[9],mv[10] ];
 	draw( matrixMVP, matrixMV, matrixNormal )
 	{
 		// [COMPLETAR] Completar con lo necesario para dibujar la colección de triángulos en WebGL
@@ -163,11 +168,25 @@ class MeshDrawer
 		gl.useProgram( this.prog );
 	
 		// 2. Setear uniformes con las matrices de transformaciones
-		
-		// aca toquetear matrixMVP, matrixMV, matrixNormal y setear la correcta 
-		// gl.uniformMatrix4fv( matrixMVP, false, trans );
+		gl.uniformMatrix4fv( this.mvp, false, matrixMVP );
+		gl.uniformMatrix4fv( this.mv, false, matrixMV );
+		gl.uniformMatrix3fv( this.mn, false, matrixNormal );
 
    		// 3. Habilitar atributos: vértices, normales, texturas
+		// vertices
+		gl.bindBuffer( gl.ARRAY_BUFFER, this.vertPosBuffer );
+		gl.vertexAttribPointer( this.pos, 3, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( this.pos );
+
+		// texturas
+		gl.bindBuffer( gl.ARRAY_BUFFER, this.texCoordsBuffer );
+		gl.vertexAttribPointer( this.texCoordsVS, 2, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( this.texCoordsVS );
+
+		// normales?
+		gl.bindBuffer( gl.ARRAY_BUFFER, this.normalsBuffer );
+		gl.vertexAttribPointer( this.normCoord, 3, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( this.normCoord );
 
 		gl.drawArrays( gl.TRIANGLES, 0, this.numTriangles * 3 );
 	}
@@ -177,13 +196,23 @@ class MeshDrawer
 	setTexture( img )
 	{
 		// [COMPLETAR] Binding de la textura
+		gl.useProgram( this.prog );
+		const textura = gl.createTexture();
+		gl.bindTexture( gl.TEXTURE_2D, textura);
 
 		// Pueden setear la textura utilizando esta función:
 		gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img );
 
-
 		// [COMPLETAR] Ahora que la textura ya está seteada, debemos setear 
 		// parámetros uniformes en el fragment shader para que pueda usarla. 
+		gl.generateMipmap( gl.TEXTURE_2D );
+
+		gl.activeTexture( gl.TEXTURE0 ); // digo que voy a usar la Texture Unit 0
+		gl.bindTexture( gl.TEXTURE_2D, textura);
+
+		this.sampler = gl.getUniformLocation(this.prog, 'texGPU' );
+		gl.useProgram(this.prog);
+		gl.uniform1i(this.sampler, 0 ); // Unidad 0
 	}
 		
         // Esta función se llama cada vez que el usuario cambia el estado del checkbox 'Mostrar textura'
@@ -191,6 +220,8 @@ class MeshDrawer
 	showTexture( show )
 	{
 		// [COMPLETAR] Setear variables uniformes en el fragment shader para indicar si debe o no usar la textura
+		gl.useProgram( this.prog );
+		gl.uniform1i(this.swapTex, show);
 	}
 	
 	// Este método se llama al actualizar la dirección de la luz desde la interfaz
@@ -219,28 +250,25 @@ class MeshDrawer
 // Vertex Shader
 var meshVS = `
 	attribute vec3 pos;
+	attribute vec2 texCoordsVS;
 
 	uniform mat4 mvp;
 	uniform mat4 mv;
+	uniform mat3 mn;
 	uniform bool swapVar;
 
-	varying vec2 texCoord;
+	varying vec2 texCoordsFS;
 	varying vec3 normCoord;
 	varying vec4 vertCoord;
 
 	void main()
 	{ 
-		gl_Position = mvp * vec4(pos,1);
-
 		if(swapVar){
-			vec3 swapPos;
-			swapPos[0] = pos[1];
-			swapPos[1] = pos[0];
-			swapPos[2] = pos[2];
-			gl_Position = mvp * vec4(swapPos,1);
+			gl_Position = mvp * vec4(pos[1], pos[0], pos[2], 1);
 		} else{
 			gl_Position = mvp * vec4(pos,1);
 		}
+		texCoordsFS = texCoordsVS;
 	}
 `;
 
@@ -254,13 +282,19 @@ var meshFS = `
 	precision mediump float;
 
 	uniform mat3 mn;
+	uniform bool swapTex;
+	uniform sampler2D texGPU;
 
-	varying vec2 texCoord;
+	varying vec2 texCoordsFS;
 	varying vec3 normCoord;
 	varying vec4 vertCoord;
 
 	void main()
-	{		
-		gl_FragColor = vec4( 1, 0, 0, 1 );
+	{	
+		if(swapTex){
+			gl_FragColor = texture2D(texGPU, texCoordsFS);	
+		} else {
+			gl_FragColor = vec4( 1, 0, 0, 1 );
+		}	
 	}
 `;
