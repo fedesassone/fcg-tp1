@@ -104,7 +104,7 @@ class MeshDrawer
 
 		this.texCoordsVS = gl.getAttribLocation( this.prog, 'texCoordsVS'  );
 		this.normCoordVS = gl.getAttribLocation( this.prog, 'normCoordVS' );
-		this.vertCoord   = gl.getAttribLocation( this.prog, 'vertCoord' );
+		this.vertCoordVS = gl.getAttribLocation( this.prog, 'vertCoordVS' );
 
 		this.numTriangles = 0;
 
@@ -256,6 +256,7 @@ var meshVS = `
 	attribute vec3 pos;
 	attribute vec2 texCoordsVS;
 	attribute vec3 normCoordVS;
+	attribute vec4 vertCoordVS;
 
 	uniform mat4 mvp;
 	uniform mat4 mv;
@@ -264,7 +265,7 @@ var meshVS = `
 
 	varying vec2 texCoords;
 	varying vec3 normCoord;
-	varying vec4 vertCoord;
+	varying vec3 vertCoord;
 
 	void main()
 	{ 
@@ -275,6 +276,7 @@ var meshVS = `
 		}
 		texCoords = texCoordsVS;
 		normCoord = normCoordVS;
+		vertCoord = vec3(vertCoordVS[0], vertCoordVS[1], vertCoordVS[2]);
 	}
 `;
 
@@ -295,22 +297,31 @@ var meshFS = `
 
 	varying vec2 texCoords;
 	varying vec3 normCoord;
-	varying vec4 vertCoord;
+	varying vec3 vertCoord;
 
 	void main()
 	{	
-		float cos_theta = dot(normCoord, lightDir);
-		// vec3 r = dot(2.0, cos_theta);
-		// float cos_sigma = dot(normCoord, lightDir);
-		// vec3 v = vec3(1.0, 1.0, 1.0);
-		// float cos_sigma = dot(r, v);
+		// vectores
+		vec3 n = normalize(mn * normalize(normCoord));
+		vec3 v = normalize(-vertCoord);
+		vec3 l = normalize(lightDir);
+		vec3 h = normalize(n + v);
+		vec3 r = normalize(dot(l, n)*n );
+		vec4 I  = vec4(1.0,1.0,1.0,1.0);
+		vec4 kd = vec4(1.0,1.0,1.0,1.0);
+		vec4 ks = vec4(1.0,1.0,1.0,1.0);
 
-		float color = shininess *  max(0.0, cos_theta);
+		// cosenos
+		float cos_theta = max(0.0, dot(n, l));
+		float cos_sigma = max(0.0, dot(v, r));
+		float cos_omega = max(0.0, dot(n, h));
 
 		if(swapTex){
-			gl_FragColor =  texture2D(texGPU, texCoords);	
+			// Blinn-Phong
+			kd = texture2D(texGPU, texCoords);
+			gl_FragColor = I * ((kd * cos_theta) + (ks * pow(cos_omega, shininess)));
 		} else {
 			gl_FragColor = vec4( 1, 0, 0, 1 );
-		}	
+		}
 	}
 `;
