@@ -97,14 +97,14 @@ class MeshDrawer
 		// hack para que matchee con el estado inicial del front
 		this.showTexture(true);
 		this.lightDir  = gl.getUniformLocation( this.prog, 'lightDir'  );
-		this.shininess = gl.getUniformLocation( this.prog, 'shininess'  );
+		this.intensity = gl.getUniformLocation( this.prog, 'intensity'  );
 		
 		// 3. Obtenemos los IDs de los atributos de los vértices en los shaders
 		this.pos = gl.getAttribLocation( this.prog, 'pos' );
 
 		this.texCoordsVS = gl.getAttribLocation( this.prog, 'texCoordsVS'  );
 		this.normCoordVS = gl.getAttribLocation( this.prog, 'normCoordVS' );
-		this.vertCoordVS = gl.getAttribLocation( this.prog, 'vertCoordVS' );
+		//this.vertCoordVS = gl.getAttribLocation( this.prog, 'vertCoordVS' );
 
 		this.numTriangles = 0;
 
@@ -230,6 +230,7 @@ class MeshDrawer
 	setLightDir( x, y, z )
 	{		
 		// [COMPLETAR] Setear variables uniformes en el fragment shader para especificar la dirección de la luz
+		gl.useProgram( this.prog );
 		gl.uniform3f(this.lightDir, x, y, z);
 	}
 		
@@ -237,7 +238,8 @@ class MeshDrawer
 	setShininess( shininess )
 	{		
 		// [COMPLETAR] Setear variables uniformes en el fragment shader para especificar el brillo.
-		gl.uniform1f(this.shininess, shininess);
+		gl.useProgram( this.prog );
+		gl.uniform1f(this.intensity, shininess);
 	}
 }
 
@@ -256,7 +258,7 @@ var meshVS = `
 	attribute vec3 pos;
 	attribute vec2 texCoordsVS;
 	attribute vec3 normCoordVS;
-	attribute vec4 vertCoordVS;
+	//attribute vec4 vertCoordVS;
 
 	uniform mat4 mvp;
 	uniform mat4 mv;
@@ -265,7 +267,7 @@ var meshVS = `
 
 	varying vec2 texCoords;
 	varying vec3 normCoord;
-	varying vec3 vertCoord;
+	varying vec4 vertCoord;
 
 	void main()
 	{ 
@@ -276,7 +278,7 @@ var meshVS = `
 		}
 		texCoords = texCoordsVS;
 		normCoord = normCoordVS;
-		vertCoord = vec3(vertCoordVS[0], vertCoordVS[1], vertCoordVS[2]);
+		vertCoord = mv * vec4(pos,1);
 	}
 `;
 
@@ -293,20 +295,21 @@ var meshFS = `
 	uniform bool swapTex;
 	uniform sampler2D texGPU;
 	uniform vec3 lightDir;
-	uniform float shininess;
+	uniform float intensity;
 
 	varying vec2 texCoords;
 	varying vec3 normCoord;
-	varying vec3 vertCoord;
+	varying vec4 vertCoord;
 
 	void main()
 	{	
 		// vectores
+		vec4 aux = normalize(-vertCoord);
 		vec3 n = normalize(mn * normalize(normCoord));
-		vec3 v = normalize(-vertCoord);
+		vec3 v = normalize(vec3(aux[0], aux[1], aux[2]));
 		vec3 l = normalize(lightDir);
-		vec3 h = normalize(n + v);
-		vec3 r = normalize(dot(l, n)*n );
+		vec3 h = normalize((l + v) / normalize(l + v));
+		vec3 r = normalize((dot(l, n)*2.0*n) - l);
 		vec4 I  = vec4(1.0,1.0,1.0,1.0);
 		vec4 kd = vec4(1.0,1.0,1.0,1.0);
 		vec4 ks = vec4(1.0,1.0,1.0,1.0);
@@ -319,7 +322,7 @@ var meshFS = `
 		if(swapTex){
 			// Blinn-Phong
 			kd = texture2D(texGPU, texCoords);
-			gl_FragColor = I * ((kd * cos_theta) + (ks * pow(cos_omega, shininess)));
+			gl_FragColor = I * cos_theta * ( kd + (ks*pow(cos_omega,intensity)/cos_theta));
 		} else {
 			gl_FragColor = vec4( 1, 0, 0, 1 );
 		}
